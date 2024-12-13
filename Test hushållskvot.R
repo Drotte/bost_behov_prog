@@ -20,22 +20,19 @@ omrade <- c("2026", "2029", "2031", "2080", "2081", "2082")
 ar_prog <- seq(stat_ar + 1, slut_ar)
 ar_hist <- seq(2006, stat_ar)
 
-# OBS!!! Se över hur det sista året hoss SCB är formaterat
+# OBS!!! Få in denna alder <- c(seq(16, 99), "100+") och formatera så att även de som är över hundra kan räknas in. Alt så förkastas dem då de är relativt få
 # Anger vilka åldrar ska vara med
 alder <- seq(16, 99)
 
-# SCB API-bas-URL och endpoint
-base_url <- "https://api.scb.se/OV0104/v1/doris/sv/ssd/"
-
 # Lägg till den specifika dataset-endpointen för befolkningsprognosen
-data_url_prog <- paste0(base_url, "BE/BE0401/BE0401A/BefProgRegFakN") 
+data_url_prog <- "https://api.scb.se/OV0104/v1/doris/sv/ssd/BE/BE0401/BE0401A/BefProgRegFakN" 
 
-# Hämta metadata för att förstå datasetets struktur
-response <- GET(data_url_prog)
-metadata <- content(response, "text", encoding = "UTF-8")
-metadata_json <- fromJSON(metadata)
+### Kör denna kod för att få metadata:
+# response <- GET(data_url_prog)
+# metadata <- content(response, "text", encoding = "UTF-8")
+# metadata_json <- fromJSON(metadata)
 
-# Skapa JSON-begäran för POST-anrop
+# Här skapas en lista över vilka variabler som ska hämtas från SCB baserat på tidigare angivna värden. En sådan lista skapas för varje förfrågan till SCB
 query_prog <- list(
   query = list(
     list(code = "Tid", selection = list(filter = "item", values = as.character(ar_prog))),
@@ -62,11 +59,12 @@ data_prog <- data_prog %>%
 
 
 # Hämtar historisk demografisk data
-data_url_hist <- paste0(base_url, "/BE/BE0101/BE0101A/BefolkningNy")
+data_url_hist <- "https://api.scb.se/OV0104/v1/doris/sv/ssd/BE/BE0101/BE0101A/BefolkningNy"
 
-response <- GET(data_url_hist)
-metadata <- content(response, "text", encoding = "UTF-8")
-metadata_json <- fromJSON(metadata)
+### Kör denna kod för att få metadata:
+# response <- GET(data_url_hist)
+# metadata <- content(response, "text", encoding = "UTF-8")
+# metadata_json <- fromJSON(metadata)
 
 query_hist <- list(
   query = list(
@@ -96,12 +94,12 @@ data_hist <- data_hist %>%
 
 
 # Hämtar bostads data
-data_url_bost <- paste0(base_url, "/BO/BO0104/BO0104D/BO0104T04")
+data_url_bost <- "https://api.scb.se/OV0104/v1/doris/sv/ssd/BO/BO0104/BO0104D/BO0104T04"
 
-
-response <- GET(data_url_bost)
-metadata <- content(response, "text", encoding = "UTF-8")
-metadata_json <- fromJSON(metadata)
+### Kör denna kod för att få metadata:
+# response <- GET(data_url_bost)
+# metadata <- content(response, "text", encoding = "UTF-8")
+# metadata_json <- fromJSON(metadata)
 
 query_bost <- list(
   query = list(
@@ -121,10 +119,9 @@ data_bost <- data_bost %>%
   mutate(key = gsub('c\\(|\\)|"', '', key)) %>%
   mutate(values = gsub('c\\(|\\)|"', '', values)) %>%
   separate(key, into = c("Region", "Tid"), sep = ",") %>%
-  rename(bostader = values)
+  rename(bostader = values) 
 
 
-# ----------------------------------
 
 #Importera kvot data
 kvot <- read_xlsx("kvot.xlsx")
@@ -132,25 +129,21 @@ kvot <- read_xlsx("kvot.xlsx")
 kvot <- kvot %>%
   mutate(Alder = as.numeric(Alder)) 
 
+data_bost <- data_bost %>%
+  mutate(Tid = as.numeric(Tid))
+
 # Skapar en gemensam df för all demografisk data.
 dem_data <- rbind(data_hist, data_prog) %>%
   mutate(values = as.numeric(values)) %>%
   mutate(Alder = as.numeric(Alder)) %>%
   mutate(Tid = as.numeric(Tid))
 
-dem_data <- dem_data %>%
-  left_join(kvot, by = "Alder")
-
 
 dem_data <- dem_data %>%
-  mutate(dem_data, forva_hushall = values * kvot)
-
-dem_data <- dem_data %>%
+  left_join(kvot, by = "Alder") %>%
+  mutate(dem_data, forva_hushall = values * kvot) %>%
   group_by(Region, Tid) %>%
-  summarise(forv_hushall_per_ar = sum(forva_hushall, na.rm = TRUE))
-
-data_bost <- data_bost %>%
-  mutate(Tid = as.numeric(Tid))
+  summarise(forv_hushall_per_ar = sum(forva_hushall, na.rm = TRUE)) 
 
 total <- dem_data %>%
   left_join(data_bost, by = c("Region", "Tid")) %>%
@@ -164,10 +157,6 @@ bost_prog <- total %>%
 
 forandring <- bost_prog %>%
   filter(Tid %in% c(stat_ar, slut_ar)) %>%
-  select(Region, forv_hushall_per_ar)
-
-forandring <- bost_prog %>%
-  filter(Tid %in% c(stat_ar, slut_ar)) %>%
   arrange(Region, Tid) %>% 
   group_by(Region) %>%
   summarise(skillnad = diff(forv_hushall_per_ar)) %>%
@@ -175,32 +164,51 @@ forandring <- bost_prog %>%
 
 bost_prog <- bost_prog %>%
   left_join(forandring, by = "Region")
+
+bost_prog <- bost_prog %>%
+  mutate(bostads_prognos = ifelse(vaxer_regionen & Tid >= stat_ar & Tid <= slut_ar, 
+                                      forv_hushall_per_ar * 1.01, 
+                                      NA))
+
+total_utvalda_regioner <- bost_prog %>%
+  group_by(Tid) %>%
+  summarise(
+    forv_hushall_per_ar = sum(forv_hushall_per_ar, na.rm = TRUE),
+    bostader = sum(bostader, na.rm = TRUE),
+    underskott = sum(underskott, na.rm = TRUE),
+    skillnad = sum(skillnad, na.rm = TRUE),
+    bostads_prognos = sum(bostads_prognos, na.rm = TRUE)
+  ) %>%
+  mutate(Region = "Total") %>%
+  select(Region, everything())%>%
+  # TA BORT OCH GÖR PÅ NÅGOT SNYGGARE SÄTT. Ersätt alla 0 med NA i hela dataframen
+  mutate(across(everything(), ~ ifelse(. == 0, NA, .)))
+
+
+ggplot(bost_prog, aes(x = Tid)) +
+  geom_line(aes(y = bostader, color = "Bostäder"), size = 1) +
+  geom_line(aes(y = bostads_prognos, color = "Bostadsprognos"), size = 1, linetype = "dashed") +
+  labs(
+    title = "Utveckling av bostäder och prognos över tid per region",
+    x = "Tid",
+    y = "Antal",
+    color = "Legend"
+  ) +
+  scale_color_manual(values = c("Bostäder" = "blue", "Bostadsprognos" = "red")) +
+  theme_minimal() +
+  facet_wrap(~ Region, scales = "free_y")
+
+
+ggplot(total_utvalda_regioner, aes(x = Tid)) +
+  geom_line(aes(y = bostader, color = "Bostäder"), size = 1) +
+  geom_line(aes(y = bostads_prognos, color = "Bostadsprognos"), size = 1, linetype = "dashed") +
+  labs(
+    title = "Utveckling av bostäder och prognos över tid",
+    x = "Tid",
+    y = "Antal",
+    color = "Legend"
+  ) +
+  scale_color_manual(values = c("Bostäder" = "blue", "Bostadsprognos" = "red")) +
+  theme_minimal()
   
-if (bost_prog) {
-  prognos_vaxer <- prognosDF # OBS!!!! Fixa denna är inte klar. Vi behöver implementera prognos data.
-  mutate(bostader = ifelse(Tid == stat_ar + 1, hushall_per_ar * 1,01))
-}
-  
-#Checkar om antalet hushåll förväntas växa. Om SANT läggs en buffert på antalet bostäder som behövs
-
-
-
-
-#Beräknar den procentuella ökningen bland hushållen
-tidigaste_ar_talet <- min(bostader_mot_husall$ar, na.rm = TRUE) #Här tar vi reda på det minsta värdet
-
-forandring <- bostader_mot_husall %>%
-  filter(ar %in% c(tidigaste_ar_talet, stat_ar)) %>% #stat_ar bör kanske vara sista året i framskrivningen istället
-  select(ar, hushall_per_ar)
-foran <- forandring %>%
-  summarise(forandring_mellan_ar = hushall_per_ar[2] - hushall_per_ar[1])
-
-#Checkar om antalet hushåll förväntas växa. Om SANT läggs en buffert på antalet bostäder som behövs
-vaxer_regionen <- all(foran$forandring_mellan_ar >= 0)
-
-if (vaxer_regionen) {
-  prognos_vaxer <- prognosDF # OBS!!!! Fixa denna är inte klar. Vi behöver implementera prognos data.
-  mutate(prognos = ifelse(ar == stat_ar + 1, hushall_per_ar * 1,01))
-}
 message("Körningen är klar!")
-
