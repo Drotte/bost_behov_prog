@@ -3,7 +3,6 @@ library(jsonlite)
 library(tidyverse)
 library(readxl)
 library(ggplot2)
-library(dplyr)
 
 # Ange det senaste året med statistik
 stat_ar <- 2023
