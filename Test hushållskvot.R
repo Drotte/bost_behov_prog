@@ -20,9 +20,9 @@ omrade <- c("2026", "2029", "2031", "2080", "2081", "2082")
 ar_prog <- seq(stat_ar + 1, slut_ar)
 ar_hist <- seq(2006, stat_ar)
 
-# OBS!!! Få in denna alder <- c(seq(16, 99), "100+") och formatera så att även de som är över hundra kan räknas in. Alt så förkastas dem då de är relativt få
+
 # Anger vilka åldrar ska vara med
-alder <- seq(16, 99)
+alder <- seq(16, 99) # OBS!!! Få in denna istället: alder <- c(seq(16, 99), "100+") och formatera så att även de som är över hundra kan räknas in. Alt så förkastas dem då de är relativt få
 
 # Lägg till den specifika dataset-endpointen för befolkningsprognosen
 data_url_prog <- "https://api.scb.se/OV0104/v1/doris/sv/ssd/BE/BE0401/BE0401A/BefProgRegFakN" 
@@ -33,7 +33,7 @@ data_url_prog <- "https://api.scb.se/OV0104/v1/doris/sv/ssd/BE/BE0401/BE0401A/Be
 # metadata_json <- fromJSON(metadata)
 
 # Här skapas en lista över vilka variabler som ska hämtas från SCB baserat på tidigare angivna värden. En sådan lista skapas för varje förfrågan till SCB
-query_prog <- list(
+pxweb_query_list <- list(
   query = list(
     list(code = "Tid", selection = list(filter = "item", values = as.character(ar_prog))),
     list(code = "Region", selection = list(filter = "item", values = as.character(omrade))),
@@ -43,7 +43,7 @@ query_prog <- list(
 )
 
 # Skicka POST-anrop och hämta data
-response <- POST(data_url_prog, body = toJSON(query_prog, auto_unbox = TRUE), encode = "json")
+response <- POST(data_url_prog, body = toJSON(pxweb_query_list, auto_unbox = TRUE), encode = "json")
 data_json_prog <- content(response, "text", encoding = "UTF-8")
 data <- fromJSON(data_json_prog)
 
@@ -66,7 +66,7 @@ data_url_hist <- "https://api.scb.se/OV0104/v1/doris/sv/ssd/BE/BE0101/BE0101A/Be
 # metadata <- content(response, "text", encoding = "UTF-8")
 # metadata_json <- fromJSON(metadata)
 
-query_hist <- list(
+pxweb_query_list <- list(
   query = list(
     list(code = "Tid", selection = list(filter = "item", values = as.character(ar_hist))),
     list(code = "Region", selection = list(filter = "item", values = as.character(omrade))),
@@ -75,7 +75,7 @@ query_hist <- list(
   response = list(format = "json")
 )
 
-response <- POST(data_url_hist, body = toJSON(query_hist, auto_unbox = TRUE), encode = "json")
+response <- POST(data_url_hist, body = toJSON(pxweb_query_list, auto_unbox = TRUE), encode = "json")
 data_json_hist <- content(response, "text", encoding = "UTF-8")
 data <- fromJSON(data_json_hist)
 
@@ -101,7 +101,7 @@ data_url_bost <- "https://api.scb.se/OV0104/v1/doris/sv/ssd/BO/BO0104/BO0104D/BO
 # metadata <- content(response, "text", encoding = "UTF-8")
 # metadata_json <- fromJSON(metadata)
 
-query_bost <- list(
+pxweb_query_list <- list(
   query = list(
     list(code = "Tid", selection = list(filter = "item", values = as.character(ar_hist))),
     list(code = "Region", selection = list(filter = "item", values = as.character(omrade)))
@@ -109,7 +109,7 @@ query_bost <- list(
   response = list(format = "json")
 )
 
-response <- POST(data_url_bost, body = toJSON(query_bost, auto_unbox = TRUE), encode = "json")
+response <- POST(data_url_bost, body = toJSON(pxweb_query_list, auto_unbox = TRUE), encode = "json")
 data_json_bost <- content(response, "text", encoding = "UTF-8")
 data <- fromJSON(data_json_bost)
 
@@ -124,7 +124,23 @@ data_bost <- data_bost %>%
 
 
 #Importera kvot data
-kvot <- read_xlsx("kvot.xlsx")
+kvot <- data.frame(
+  Alder = c(16:99),
+  kvot = c(
+    rep(0.03, 4), 
+    rep(0.41, 5),
+    rep(0.6, 10),
+    rep(0.59, 10),
+    rep(0.63, 10),
+    rep(0.64, 10),
+    rep(0.68, 5),
+    rep(0.72, 5),
+    rep(0.75, 5),
+    rep(0.87, 20)
+  )
+)
+
+data$kvot <- gsub("\\.", ",", as.character(data$Kvot))
 
 kvot <- kvot %>%
   mutate(Alder = as.numeric(Alder)) 
@@ -212,3 +228,4 @@ ggplot(total_utvalda_regioner, aes(x = Tid)) +
   theme_minimal()
   
 message("Körningen är klar!")
+
