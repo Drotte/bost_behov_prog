@@ -1,7 +1,6 @@
 library(httr)
 library(jsonlite)
 library(tidyverse)
-library(readxl)
 library(ggplot2)
 
 # Ange det senaste året med statistik
@@ -15,15 +14,17 @@ omrade <- c("2026", "2029", "2031", "2080", "2081", "2082")
 
 # ----
 
-# Avgör tidsintervalen för beräkningen 
+# Avgör tidsintervalen för beräkningen. Används vid hämntningen av data från SCB. 
+# Det ansågs vara relativt god balans på bostadsmarknaden 2006 enligt Boverkets modell. Detta kan användas för att beräkna ackumulerat underskott
 ar_prog <- seq(stat_ar + 1, slut_ar)
 ar_hist <- seq(2006, stat_ar)
 
 
-# Anger vilka åldrar ska vara med
+# Anger vilka åldrar ska vara med. Börjar vid 16år enligt Boverkets modell. 
+# Barn >16år antas inte ha egen bostad
 alder <- seq(16, 99) # OBS!!! Få in denna istället: alder <- c(seq(16, 99), "100+") och formatera så att även de som är över hundra kan räknas in. Alt så förkastas dem då de är relativt få
 
-# Lägg till den specifika dataset-endpointen för befolkningsprognosen
+# Hämtar SCBs framskrivning
 data_url_prog <- "https://api.scb.se/OV0104/v1/doris/sv/ssd/BE/BE0401/BE0401A/BefProgRegFakN" 
 
 ### Kör denna kod för att få metadata:
@@ -57,7 +58,7 @@ data_prog <- data_prog %>%
 
 
 
-# Hämtar historisk demografisk data
+# Hämtar historisk demografisk data från SCB. 2006-angivet i "stat-ar"
 data_url_hist <- "https://api.scb.se/OV0104/v1/doris/sv/ssd/BE/BE0101/BE0101A/BefolkningNy"
 
 ### Kör denna kod för att få metadata:
@@ -223,4 +224,3 @@ ggplot(total_utvalda_regioner, aes(x = Tid)) +
   theme_minimal()
   
 message("Körningen är klar!")
-
