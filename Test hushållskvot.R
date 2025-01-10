@@ -118,11 +118,11 @@ data_bost <- data_bost %>%
   mutate(key = gsub('c\\(|\\)|"', '', key)) %>%
   mutate(values = gsub('c\\(|\\)|"', '', values)) %>%
   separate(key, into = c("Region", "Tid"), sep = ",") %>%
-  rename(bostader = values) 
+  rename(bostader = values) %>%
+  mutate(Tid = as.numeric(Tid))
 
 
-
-#Importera kvot data
+# Data för att kunna beräkna hushållskvoter
 kvot <- data.frame(
   Alder = c(16:99),
   kvot = c(
@@ -139,13 +139,9 @@ kvot <- data.frame(
   )
 )
 
-data$kvot <- gsub("\\.", ",", as.character(data$Kvot))
+data$kvot <- gsub("\\.", ",", as.character(data$kvot))
 
-kvot <- kvot %>%
-  mutate(Alder = as.numeric(Alder)) 
 
-data_bost <- data_bost %>%
-  mutate(Tid = as.numeric(Tid))
 
 # Skapar en gemensam df för all demografisk data.
 dem_data <- rbind(data_hist, data_prog) %>%
