@@ -60,7 +60,7 @@ Sammanlagd utveckling för utvalda regioner:
 Summerade data för alla regioner, vilket ger en översiktlig bild.
 
 
-Möjlig utvecklingspotential
+Möjlig utvecklingspotential:
 Beräkna och visualisera förväntat tillskottsbehov av bostäder per år baserat på ingående över-/underskott i separat tabell och diagram.
 Ytterligare alternativ vid beräkning av kvoter.
 Möjlighet att välja ett redan definierat FA-område istället för att skriva in regionkoder.
