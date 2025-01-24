@@ -161,12 +161,13 @@ total <- dem_data %>%
   left_join(data_bost, by = c("Region", "Tid")) %>%
   mutate(bostader = as.numeric(bostader))
 
-#Beräkna över- underskott av bostäder
+# Beräkna över- underskott av bostäder
 bost_prog <- total %>%
   mutate(underskott = forv_hushall_per_ar - bostader) # %>%
 #  mutate(underskott = ifelse(underskott < 0, 0, underskott)) %>% frågan om denna ska få vara kvar. kan vara bra att veta inför andra beräkningar
 #  mutate(ackumulerad_underskott = cumsum(underskott)) 
 
+# Se över om den här fungerar så som den ska 
 forandring <- bost_prog %>%
   filter(Tid %in% c(stat_ar, slut_ar)) %>%
   arrange(Region, Tid) %>% 
