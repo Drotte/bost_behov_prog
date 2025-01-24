@@ -27,7 +27,7 @@ alder <- seq(16, 99) # OBS!!! Få in denna istället: alder <- c(seq(16, 99), "1
 # Hämtar SCBs framskrivning
 data_url_prog <- "https://api.scb.se/OV0104/v1/doris/sv/ssd/BE/BE0401/BE0401A/BefProgRegFakN" 
 
-### Kör denna kod för att få metadata:
+## Kör denna kod för att få metadata:
 # response <- GET(data_url_prog)
 # metadata <- content(response, "text", encoding = "UTF-8")
 # metadata_json <- fromJSON(metadata)
@@ -123,7 +123,7 @@ data_bost <- data_bost %>%
   mutate(Tid = as.numeric(Tid))
 
 
-# Data för att kunna beräkna hushållskvoter
+# Kvoter för att kunna beräkna framtida hushåll
 kvot <- data.frame(
   Alder = c(16:99),
   kvot = c(
