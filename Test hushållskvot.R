@@ -5,7 +5,6 @@ library(ggplot2)
 library(pxweb)
 library(pacman)
 
-
 # Ange det år prognosen ska gå till
 slut_ar <- 2033
 
@@ -249,6 +248,9 @@ data_prog <- data_prog %>%
                                       forv_hushall_per_ar * 1.01,
                                       NA))
 data_prog$år <- as.numeric(data_prog$år)
+
+data_prog <- data_prog %>%
+  mutate(forandring_bostads_prognos = bostads_prognos - lag(bostads_prognos))
 
 
 total_utvalda_regioner <- data_prog %>%
