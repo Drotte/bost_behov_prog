@@ -1,7 +1,4 @@
-library(httr)
-library(jsonlite)
 library(tidyverse)
-library(ggplot2)
 library(pxweb)
 library(pacman)
 
@@ -227,6 +224,7 @@ data_prog <- data_prog %>%
   mutate(bostads_prognos = ifelse(vaxer_regionen & år >= max_ar & år <= slut_ar,
                                       forv_hushall_per_ar * 1.01,
                                       NA))
+
 data_prog$år <- as.numeric(data_prog$år)
 
 data_prog <- data_prog %>%
