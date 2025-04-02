@@ -16,14 +16,12 @@ omrade <- c("2026", "2029", "2031", "2080", "2081", "2082")
 # Ladda in funktioner som Region Dalarna har gjort
 source("https://raw.githubusercontent.com/Region-Dalarna/funktioner/refs/heads/main/func_API.R")
 
-
 # Hämtar historisk demografisk data från SCB. 2006-angivet i "stat-ar"
 
 px_url <- "https://api.scb.se/OV0104/v1/doris/sv/ssd/BE/BE0101/BE0101A/BefolkningNy" 
 
 ## Kör denna kod för att få metadata:
 px_meta <- pxweb_get(px_url)
-
 
 max_ar <- hamta_giltiga_varden_fran_tabell(px_meta, "Tid" ) %>% 
   max()%>% 
@@ -45,11 +43,9 @@ px_uttag <- pxweb_get(px_url, query = query)
 data_hist <- px_uttag %>% 
   as.data.frame()
 
-
 # Hämtar SCBs framskrivning
 px_url <- "https://api.scb.se/OV0104/v1/doris/sv/ssd/BE/BE0401/BE0401A/BefProgRegFakN" 
 
-## Kör denna kod för att få metadata:
 px_meta <- pxweb_get(px_url)
 
 
@@ -90,9 +86,7 @@ data_prog <- full_join(
   by = NULL)
 
 # Skapa df för att beräkna hushållskvoter
-
 # Män
-
 alder <- c(16:99, "100+")
 
 alder <- c(paste(alder, "år"))
@@ -117,15 +111,12 @@ kvot <- c(0.003616637, 0.011083744, 0.027061045, 0.076774194, 0.151074589,
           0.967391304, 0.967391304, 0.967391304, 0.967391304, 0.967391304
 )
 
-
 kon <- c(rep("män", 85))
 
 data_kvot <- data.frame(kvot = kvot, ålder = alder, kön = kon)
 
 # Kvinnor
-
 # Nationella kvoter kvinnor och 1-årsintervall 
-
 kvot <- c(0.001230012, 0.001831502, 0.022018349, 0.070128119, 0.169542386, 
           0.25317401, 0.3010279, 0.331905782, 0.368386675, 0.361578266, 
           0.386601106, 0.399878271, 0.42015855, 0.408426966, 0.412188366, 
@@ -145,7 +136,6 @@ kvot <- c(0.001230012, 0.001831502, 0.022018349, 0.070128119, 0.169542386,
           0.95531781, 0.95531781, 0.95531781, 0.95531781, 0.95531781
 )
 
-
 kon <- c(rep("kvinnor", 85))
 
 data_kvinnor <- data.frame(kvot = kvot, ålder = alder, kön = kon)
@@ -159,10 +149,7 @@ data_prog <- data_prog %>%
   left_join(data_kvot %>% 
               select(ålder, kön, kvot), by = c("ålder", "kön"))
 
-
-
 # Hämtar bostads data
-
 px_url <- "https://api.scb.se/OV0104/v1/doris/sv/ssd/BO/BO0104/BO0104D/BO0104T04" 
 
 ## Kör denna kod för att få metadata:
@@ -191,7 +178,6 @@ data_bost <- px_uttag %>%
 data_bost <- data_bost %>% 
   rename(Bostäder = Antal)
 
-
 # Kvoter för att kunna beräkna framtida hushåll
 # kvot <- data.frame(
 #   Alder = c(16:99),
@@ -210,8 +196,6 @@ data_bost <- data_bost %>%
 # )
  
 
-# Försök lista ut varför värdet fölr år 2024 blir multiplicerat med 2 när värdena summeras...
-
 data_prog <- data_prog %>%
   mutate(data_prog, forva_hushall = Folkmängd * kvot)  %>%
   group_by(region, år) %>%
@@ -222,15 +206,11 @@ data_prog <- full_join(
   data_bost,
   by = NULL)
 
-
-
 # Beräkna över- underskott av bostäder
 data_prog <- data_prog %>%
   mutate(underskott = forv_hushall_per_ar - Bostäder) # %>%
 #  mutate(underskott = ifelse(underskott < 0, 0, underskott)) %>% frågan om denna ska få vara kvar. kan vara bra att veta inför andra beräkningar
 #  mutate(ackumulerad_underskott = cumsum(underskott)) 
-
-
 
 # Se över om den här fungerar så som den ska 
 forandring <- data_prog %>%
@@ -251,7 +231,6 @@ data_prog$år <- as.numeric(data_prog$år)
 
 data_prog <- data_prog %>%
   mutate(forandring_bostads_prognos = bostads_prognos - lag(bostads_prognos))
-
 
 total_utvalda_regioner <- data_prog %>%
   group_by(år) %>%
