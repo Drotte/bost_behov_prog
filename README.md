@@ -8,6 +8,7 @@ För att kunna köra denna kod behöver du:
 
 R installerat på din dator.
 Följande R-bibliotek installerade:
+
 httr
 jsonlite
 tidyverse
@@ -17,8 +18,11 @@ ggplot2
 Koden hämtar data för:
 
 Befolkningsframskrivningar (framtida år).
+
 Demografiska data (historiska år).
+
 Befintligt bostadsbestånd.
+
 Anpassade förfrågningar skickas till SCB:s API som baseras på specifika regionkoder och tidsintervall.
 
 2. Parametrar för körning
