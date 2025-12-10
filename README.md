@@ -1,4 +1,5 @@
 Prognosmodell för bostadsmarknaden
+
 Detta projekt implementerar en modell för att analysera och prognostisera bostadsmarknaden i olika svenska regioner, inspirerad av Boverkets metodik. Koden hämtar demografiska och bostadsrelaterad data från 
 SCB (Statistiska centralbyrån), beräknar antalet framtida hushåll och visualiserar resultaten i form av grafer.
 
