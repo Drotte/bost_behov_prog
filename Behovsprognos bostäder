@@ -3,10 +3,12 @@ library(pxweb)
 library(pacman)
 
 # Ange det år prognosen ska gå till
-slut_ar <- 2033
+slut_ar <- 2035
 
 # Ange de region- alt. kommunkoder som ska ingå i beräkningen.
-omrade <- c("2026", "2029", "2031", "2080", "2081", "2082")
+omrade <- c("1981", "1962", "1982", "2083", "2084")
+
+# Typ_av_kvot <- 0 # För nationella hushållskvoter skriv in 0, för aggregerade kvoter som används av Boverket skriv in 1
 
 # ----
 
@@ -220,15 +222,28 @@ forandring <- data_prog %>%
 data_prog <- data_prog %>%
   left_join(forandring, by = "region")
 
+# Skriver bostadsprognosen och lägger till en buffert på 1% om antalet hushåll växer
 data_prog <- data_prog %>%
-  mutate(bostads_prognos = ifelse(vaxer_regionen & år >= max_ar & år <= slut_ar,
-                                      forv_hushall_per_ar * 1.01,
-                                      NA))
+  mutate(
+    bostads_prognos = ifelse(
+      år >= max_ar & år <= slut_ar,
+      ifelse(vaxer_regionen,
+             forv_hushall_per_ar * 1.01,
+             forv_hushall_per_ar * 1.0),
+      NA
+    )
+  )
+
 
 data_prog$år <- as.numeric(data_prog$år)
 
-data_prog <- data_prog %>%
-  mutate(forandring_bostads_prognos = bostads_prognos - lag(bostads_prognos))
+# data_prog <- data_prog %>%
+#   mutate(forandring_bostads_prognos = bostads_prognos - lag(bostads_prognos))
+# 
+# data_prog <- data_prog %>% 
+#   mutate(Underskott = accumulate(seq_along(Underskott), 
+#                                  ~ .x + Förändring_bostads_prognos[.y], 
+#                                  .init = Underskott[1])[-1])
 
 total_utvalda_regioner <- data_prog %>%
   group_by(år) %>%
@@ -250,12 +265,13 @@ ggplot(data_prog, aes(x = år)) +
   geom_line(aes(y = bostads_prognos, color = "Bostadsprognos"), linewidth = 1, linetype = "dashed") +
   labs(
     title = "Utveckling av bostäder och prognos över tid per region",
-    x = "Tid",
+    #subtitle = paste0(min(data_prog$år, "-", max(data_prog$år))),
+    x = "År",
     y = "Antal",
     color = "Legend"
   ) +
   scale_color_manual(values = c("Bostäder" = "blue", "Bostadsprognos" = "red")) +
-  theme_minimal() +
+  theme_light() +
   facet_wrap(~ region, scales = "free_y")
 
 
@@ -269,7 +285,9 @@ ggplot(total_utvalda_regioner, aes(x = år)) +
     color = "Legend"
   ) +
   scale_color_manual(values = c("Bostäder" = "blue", "Bostadsprognos" = "red")) +
-  theme_minimal()
+  theme_light()
+
+
   
 message("Körningen är klar!")
 
